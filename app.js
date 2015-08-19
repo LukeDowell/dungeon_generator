@@ -6,11 +6,11 @@ var TILE_SIZE = 16;
 
 //Min and max values for our room in grid units
 var MIN_ROOM_SIZE = 5;
-var MAX_ROOM_SIZE = 10;
+var MAX_ROOM_SIZE = 12;
 
 //Map size values
-var MAP_WIDTH = 40;
-var MAP_HEIGHT = 40;
+var MAP_WIDTH = 50;
+var MAP_HEIGHT = 50;
 
 //Our canvas and context
 var canvas = null;
@@ -31,9 +31,13 @@ $(document).ready(function() {
     canvas.setAttribute("height", (MAP_HEIGHT * TILE_SIZE));
 
     context = canvas.getContext("2d");
+    context.fillStyle = "black";
+    context.fillRect(0, 0, (MAP_WIDTH * TILE_SIZE), (MAP_HEIGHT * TILE_SIZE));
+    context.fillStyle = "grey";
+
     console.log(context);
 
-    var rooms = placeRooms(4);
+    var rooms = placeRooms(5);
 });
 
 /**
@@ -45,8 +49,7 @@ $(document).ready(function() {
  */
 function drawRoom(room, ctx) {
     console.log(room);
-    ctx.fillStyle = "black";
-    ctx.strokeRect(room.x1 * TILE_SIZE,
+    ctx.fillRect(room.x1 * TILE_SIZE,
                     room.y1 * TILE_SIZE,
                     room.width * TILE_SIZE,
                     room.height * TILE_SIZE);
@@ -88,8 +91,8 @@ function placeRooms(numRooms) {
             drawRoom(newRoom, context);
             if(rooms.length > 0) {
                 var prevRoom = rooms[rooms.length-1];
-                genHorizontalCorridor(newRoom.centerPoint.x, prevRoom.centerPoint.x, newRoom.centerPoint.y);
-                genVerticalCorridor(newRoom.centerPoint.y, prevRoom.centerPoint.y, prevRoom.centerPoint.x);
+                genHorizontalCorridor(newRoom, prevRoom);
+                genVerticalCorridor(newRoom, prevRoom);
             }
             rooms.push(newRoom);
             console.log("Room created: " , newRoom);
@@ -103,30 +106,57 @@ function placeRooms(numRooms) {
 
 /**
  * Generates a horizontal corridor between two rooms.
- * @param roomOne
+ * @param newRoom
  *      The first room
- * @param roomTwo
+ * @param prevRoom
  *      The second room
- * @param y
- *      The y value at which to begin drawing the corridor
  */
-function genHorizontalCorridor(x1, x2, y) {
-    var corridorLength =(x1 - x2);
-    var corridor = new Corridor(x2, y, corridorLength, 1);
+function genHorizontalCorridor(newRoom, prevRoom) {
+    var corridorLength = (newRoom.centerPoint.x - prevRoom.centerPoint.x);
+    var corridorX = null;
+    var corridorY = prevRoom.centerPoint.y;
+    var corridorHeight = 1;
+
+    if(corridorLength > 0) {
+        //Runs east, so we use the previous room as a starting point
+        corridorX = prevRoom.centerPoint.x;
+    } else {
+        //Runs west, so we use the current room as a starting point
+        corridorX = newRoom.centerPoint.x;
+    }
+    var corridor = new Corridor(
+        corridorX,
+        corridorY,
+        Math.abs(corridorLength),
+        corridorHeight);
+    return corridor;
 }
 
 /**
  * Generates a horizontal corridor between two rooms.
- * @param roomOne
+ * @param newRoom
  *      The first room
- * @param roomTwo
+ * @param prevRoom
  *      The second room
- * @param x
- *      The x value to begin drawing the corridor
  */
-function genVerticalCorridor(y1, y2, x) {
-    var corridorHeight = Math.abs(y1 - y2);
-    var corridor = new Corridor(x, y2, 1, corridorHeight);
+function genVerticalCorridor(newRoom, prevRoom) {
+    var corridorHeight = (newRoom.centerPoint.y - prevRoom.centerPoint.y);
+    var corridorX = newRoom.centerPoint.x;
+    var corridorY = null
+    var corridorWidth = 1;
+    if(corridorHeight > 0) {
+        //Runs north, so we should start from the lowest room
+        corridorY = prevRoom.centerPoint.y;
+    } else {
+        //Runs south
+        corridorY = newRoom.centerPoint.y;
+    }
+    var corridor = new Corridor(
+        corridorX,
+        corridorY,
+        corridorWidth,
+        Math.abs(corridorHeight) + 1);
+    return corridor;
 }
 
 /**
@@ -194,7 +224,7 @@ function Corridor(x1, y1, width, height) {
     this.y1 = y1;
     this.width = width;
     this.height = height;
-    context.strokeRect(
+    context.fillRect(
         x1 * TILE_SIZE,
         y1 * TILE_SIZE,
         width * TILE_SIZE,
