@@ -9,6 +9,8 @@ var TILE_SIZE = 16;
 var MIN_LEAF_SIZE = 13;
 var MAX_LEAF_SIZE = 25;
 
+//The minimum width/height we want our rooms to have
+var MIN_ROOM_SIZE = 7;
 
 //Map size values
 var MAP_WIDTH = 50;
@@ -84,6 +86,15 @@ $(document).ready(function () {
                 leaf.room.width * TILE_SIZE,
                 leaf.room.height * TILE_SIZE
             );
+
+            leaf.room.corridors.map(function(hall) {
+                context.fillRect(
+                    hall.x1 * TILE_SIZE,
+                    hall.y1 * TILE_SIZE,
+                    hall.width * TILE_SIZE,
+                    hall.height * TILE_SIZE
+                )
+            });
         }
     });
 
@@ -132,13 +143,17 @@ Leaf.prototype.createRooms = function() {
         if(this.children.right != null) {
             this.children.right.createRooms();
         }
+
+        if(this.children.right != null && this.children.left != null) {
+            createHall(this.children.left.getRoom(), this.children.right.getRoom());
+        }
     } else {
         //No children, we are ready to make a room
 
         //We need to make a room that is contained within this leave's area, but it
-        //cannot be pushed up against the wall of the leaf. We will give it at least 3 tiles of space
-        var roomWidth = getRandom(3, this.width - 2);
-        var roomHeight = getRandom(3, this.height - 2);
+        //cannot be pushed up against the wall of the leaf. We will give it at least 2 tiles of space
+        var roomWidth = getRandom(MIN_ROOM_SIZE, this.width - 2);
+        var roomHeight = getRandom(MIN_ROOM_SIZE, this.height - 2);
 
         //Place the room inside the leaf, but make sure it isn't next to the wall
         var roomX = getRandom(1, this.width - roomWidth - 1) + this.x;
@@ -201,7 +216,145 @@ Leaf.prototype.split = function () {
 };
 
 /**
- * Represents a single room in our dungeon
+ * Recursively searches through a given leaf and finds a room. If the function
+ * has to choose between two rooms, it will randomly select one.
+ * @returns {*}
+ *      A room object, null if there are no children to be had
+ */
+Leaf.prototype.getRoom = function() {
+    if(this.room != null) {
+        //If we have a room, return it
+        return this.room;
+    } else {
+        //Declare some children
+        var leftRoom = null;
+        var rightRoom = null;
+
+        //Assign this leaf's children to the above variables if they exist
+        if(this.children.left != null) {
+            leftRoom = this.children.left.getRoom();
+        }
+        if(this.children.right != null) {
+            rightRoom = this.children.right.getRoom();
+        }
+
+        //dat return
+        if(leftRoom === null && rightRoom === null) {
+            return null;
+        } else if(rightRoom === null) {
+            return leftRoom;
+        } else if(leftRoom === null) {
+            return rightRoom;
+
+            //If we have two rooms to choose from, select one at random
+        } else if(getRandom(0, 1) === 0) {
+            return leftRoom;
+        } else {
+            return rightRoom;
+        }
+    }
+};
+
+/**
+ * Creates hallways between two rooms.
+ *
+ * This code blows, no me gusta
+ *
+ * @param leftRoom
+ *      The first room
+ * @param rightRoom
+ *      The second room
+ */
+function createHall(leftRoom, rightRoom) {
+
+    var halls = [];
+    var pointOne = {
+        x: getRandom(leftRoom.x1 + 1, leftRoom.x2 - 2),
+        y: getRandom(leftRoom.y1 + 1, leftRoom.y2 - 2)
+    };
+
+    var pointTwo = {
+        x: getRandom(rightRoom.x1 + 1, rightRoom.x2 - 2),
+        y: getRandom(rightRoom.y1 + 1, rightRoom.y2 - 2)
+    };
+
+    var width = pointTwo.x - pointOne.x;
+    var height = pointTwo.y - pointOne.y;
+
+    if(width < 0) {
+        if(height < 0) {
+            if(getRandom(0, 1) === 0) {
+                halls.push(new Corridor(pointTwo.x, pointOne.y, Math.abs(width), 1));
+                halls.push(new Corridor(pointTwo.x, pointTwo.y, 1, Math.abs(height)));
+            } else {
+                halls.push(new Corridor(pointTwo.x, pointTwo.y, Math.abs(width), 1));
+                halls.push(new Corridor(pointOne.x, pointTwo.y, 1, Math.abs(height)));
+            }
+        } else if(height > 0) {
+            if(getRandom(0, 1) === 0) {
+
+                halls.push(new Corridor(pointTwo.x, pointOne.y, Math.abs(width), 1));
+                halls.push(new Corridor(pointTwo.x, pointOne.y, 1, Math.abs(height)));
+
+            } else {
+
+                halls.push(new Corridor(pointTwo.x, pointTwo.y, Math.abs(width), 1));
+                halls.push(new Corridor(pointOne.x, pointOne.y, 1, Math.abs(height)));
+
+            }
+        } else {
+            //Height is 0
+            halls.push(new Corridor(pointTwo.x, pointTwo.y, Math.abs(width), 1));
+        }
+    }
+    else if (width > 0) {
+        if (height < 0)
+        {
+            if (getRandom(0, 1) === 0)
+            {
+                halls.push(new Corridor(pointOne.x, pointTwo.y, Math.abs(width), 1));
+                halls.push(new Corridor(pointOne.x, pointTwo.y, 1, Math.abs(height)));
+            }
+            else
+            {
+                halls.push(new Corridor(pointOne.x, pointOne.y, Math.abs(width), 1));
+                halls.push(new Corridor(pointTwo.x, pointTwo.y, 1, Math.abs(height)));
+            }
+        }
+        else if (height > 0)
+        {
+            if (getRandom(0, 1) === 0)
+            {
+                halls.push(new Corridor(pointOne.x, pointOne.y, Math.abs(width), 1));
+                halls.push(new Corridor(pointTwo.x, pointOne.y, 1, Math.abs(height)));
+            }
+            else
+            {
+                halls.push(new Corridor(pointOne.x, pointTwo.y, Math.abs(width), 1));
+                halls.push(new Corridor(pointOne.x, pointOne.y, 1, Math.abs(height)));
+            }
+        }
+        else
+        {
+            halls.push(new Corridor(pointOne.x, pointOne.y, Math.abs(width), 1));
+        }
+    } else {
+        if(height < 0) {
+            halls.push(new Corridor(pointTwo.x, pointTwo.y, 1, Math.abs(height)));
+        } else {
+            halls.push(new Corridor(pointOne.x, pointOne.y, 1, Math.abs(height)))
+        }
+    }
+
+    //Assign our rooms to our children. Each child will have a reference, not sure
+    //if that is bad
+    console.log(halls.length);
+    leftRoom.corridors = halls;
+    rightRoom.corridors = halls;
+}
+
+/**
+ * Represents a single room in our dungeon. Just a rectangle, really.
  * @param x
  *      The starting x GRID location of our room
  * @param y
@@ -232,6 +385,7 @@ function Room(x, y, width, height) {
 
 
 }
+
 /**
  * Helper function that will tell us whether or not the provided room
  * intersects with this room
@@ -250,7 +404,7 @@ Room.prototype.intersects = function (room) {
 };
 
 /**
- * Represents a corridor
+ * Represents a corridor. Also just a Rectangle.
  * @param x1
  *      The north west corner's x value
  * @param y1
