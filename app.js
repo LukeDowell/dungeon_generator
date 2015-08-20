@@ -5,8 +5,8 @@
 var TILE_SIZE = 16;
 
 //Min and max values for our room in grid units
-var MIN_ROOM_SIZE = 5;
-var MAX_ROOM_SIZE = 12;
+var MIN_ROOM_SIZE = 3;
+var MAX_ROOM_SIZE = 8;
 
 //Map size values
 var MAP_WIDTH = 50;
@@ -37,7 +37,7 @@ $(document).ready(function() {
 
     console.log(context);
 
-    var rooms = placeRooms(5);
+    var rooms = placeRooms(10);
 });
 
 /**
@@ -188,24 +188,23 @@ function Room(x, y, width, height) {
         x: Math.floor((this.x1 + this.x2) / 2),
         y: Math.floor((this.y1 + this.y2) / 2)
     };
-
-    /**
-     * Helper function that will tell us whether or not the provided room
-     * intersects with this room
-     * @param room
-     *      The room we are checking against
-     * @returns {boolean}
-     *      True if intersects, false if not
-     */
-    this.intersects = function(room) {
-        return (
+}
+/**
+ * Helper function that will tell us whether or not the provided room
+ * intersects with this room
+ * @param room
+ *      The room we are checking against
+ * @returns {boolean}
+ *      True if intersects, false if not
+ */
+Room.prototype.intersects = function(room) {
+    return (
         this.x1 <= room.x2 &&
         this.x2 >= room.x1 &&
         this.y1 <= room.y2 &&
         room.y2 >= room.y1
-        );
-    }
-}
+    );
+};
 
 /**
  * Represents a corridor
