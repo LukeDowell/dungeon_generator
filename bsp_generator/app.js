@@ -74,10 +74,10 @@ $(document).ready(function () {
     leaves.map(function (leaf) {
 
         //Draw leaf outline
-        context.strokeRect(leaf.x * TILE_SIZE,
-            leaf.y * TILE_SIZE,
-            leaf.width * TILE_SIZE,
-            leaf.height * TILE_SIZE);
+        //context.strokeRect(leaf.x * TILE_SIZE,
+        //    leaf.y * TILE_SIZE,
+        //    leaf.width * TILE_SIZE,
+        //    leaf.height * TILE_SIZE);
 
         if(leaf.room != null) {
             context.fillRect(
